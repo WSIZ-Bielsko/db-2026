@@ -11,6 +11,7 @@ pydantic = "^2.12.5"
 asyncpg = "^0.31.0"
 python-dotenv = "^1.2.2"
 faker = "^40.13.0"
+loguru = "^0.7.3"
 
 
 [tool.poetry.group.dev.dependencies]

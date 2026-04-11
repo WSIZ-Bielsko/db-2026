@@ -37,6 +37,8 @@ async def main():
 
     await insert_random_price(repo)
 
+
+
     # Don't forget to close the pool when shutting down
     await pool.close()
 
