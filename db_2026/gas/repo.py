@@ -17,6 +17,11 @@ class FuelRepository:
         row = await self.pool.fetchrow(query, id)
         return FuelType.model_validate(dict(row)) if row else None
 
+    async def get_fuel_types(self) -> list[FuelType]:
+        query = "SELECT * FROM fuel_type ORDER BY name"
+        rows = await self.pool.fetch(query)
+        return [FuelType.model_validate(dict(row)) for row in rows]
+
     async def update_fuel_type(self, id: int, ft: FuelType) -> FuelType | None:
         query = "UPDATE fuel_type SET name = $1 WHERE id = $2 RETURNING *"
         row = await self.pool.fetchrow(query, ft.name, id)
@@ -42,6 +47,11 @@ class FuelRepository:
         query = "SELECT * FROM gas_station WHERE id = $1"
         row = await self.pool.fetchrow(query, id)
         return GasStation.model_validate(dict(row)) if row else None
+
+    async def get_gas_stations(self) -> list[GasStation]:
+        query = "SELECT * FROM gas_station ORDER BY name"
+        rows = await self.pool.fetch(query)
+        return [GasStation.model_validate(dict(row)) for row in rows]
 
     async def update_gas_station(self, id: UUID, gs: GasStation) -> GasStation | None:
         query = """
