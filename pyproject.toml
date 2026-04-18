@@ -12,6 +12,7 @@ asyncpg = "^0.31.0"
 python-dotenv = "^1.2.2"
 faker = "^40.13.0"
 loguru = "^0.7.3"
+cryptography = "^46.0.7"
 
 
 [tool.poetry.group.dev.dependencies]
