@@ -1,0 +1,1 @@
+alter table group_users drop constraint fk_user;

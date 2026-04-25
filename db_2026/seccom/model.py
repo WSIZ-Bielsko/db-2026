@@ -17,3 +17,12 @@ class Group(BaseModel):
 class GroupUser(BaseModel):
     group_id: UUID
     user_key: str
+
+
+class Invite(BaseModel):
+    invite_id: UUID
+    challenge: str | None = None
+
+class User(BaseModel):
+    pub_key: str
+    token: str

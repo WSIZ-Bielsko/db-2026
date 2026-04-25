@@ -1,7 +1,11 @@
 import base64
+import os
+
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes, PublicKeyTypes
+from dotenv import load_dotenv
+from loguru import logger
 
 
 def load_public_key(filepath: str):
@@ -41,6 +45,10 @@ def decrypt_string(private_key: PrivateKeyTypes, b64_ciphertext: str) -> str:
 
 
 if __name__ == "__main__":
+    load_dotenv()
+    a = os.environ.get("A")
+    logger.warning(f"A: {a}")
+
     key_dir = "keys"
     # Load keys
     pub_key: PublicKeyTypes = load_public_key(f"{key_dir}/public.pem")
