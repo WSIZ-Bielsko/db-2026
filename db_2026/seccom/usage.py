@@ -3,7 +3,6 @@ from uuid import uuid4
 
 from loguru import logger
 
-from db_2026.seccom.model import Invite
 from db_2026.seccom.pool import create_db_pool
 from db_2026.seccom.repo import *
 

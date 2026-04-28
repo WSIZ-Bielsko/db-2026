@@ -1,58 +1,23 @@
-import base64
 import os
 
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes, PublicKeyTypes
 from dotenv import load_dotenv
 from loguru import logger
 
-
-def load_public_key(filepath: str):
-    with open(filepath, "rb") as key_file:
-        return serialization.load_pem_public_key(key_file.read())
-
-
-def load_private_key(filepath: str, password: bytes = None):
-    with open(filepath, "rb") as key_file:
-        return serialization.load_pem_private_key(key_file.read(), password=password)
-
-
-def encrypt_string(public_key: PublicKeyTypes, message: str) -> str:
-    ciphertext = public_key.encrypt(
-        message.encode('utf-8'),
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None
-        )
-    )
-    # Return as base64 string for easy transport/storage
-    return base64.b64encode(ciphertext).decode('utf-8')
-
-
-def decrypt_string(private_key: PrivateKeyTypes, b64_ciphertext: str) -> str:
-    raw_ciphertext = base64.b64decode(b64_ciphertext)
-    plaintext = private_key.decrypt(
-        raw_ciphertext,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None
-        )
-    )
-    return plaintext.decode('utf-8')
-
+from db_2026.seccom.common import generate_keypair, load_public_key, load_private_key, encrypt_string, decrypt_string
 
 if __name__ == "__main__":
     load_dotenv()
     a = os.environ.get("A")
     logger.warning(f"A: {a}")
 
+    generate_keypair('keys/first')
+
+
     key_dir = "keys"
     # Load keys
-    pub_key: PublicKeyTypes = load_public_key(f"{key_dir}/public.pem")
-    priv_key: PrivateKeyTypes = load_private_key(f"{key_dir}/private.pem")
+    pub_key: PublicKeyTypes = load_public_key(f"{key_dir}/first.public.pem")
+    priv_key: PrivateKeyTypes = load_private_key(f"{key_dir}/first.private.pem")
 
     # Encrypt and Decrypt
     original_text = "Highly confidential system data"

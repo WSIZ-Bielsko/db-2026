@@ -1,4 +1,4 @@
--- Create the groups table first since other tables reference it
+-- Create the groups table private.pem since other tables reference it
 CREATE TABLE groups (
     id UUID PRIMARY KEY,
     name TEXT NOT NULL

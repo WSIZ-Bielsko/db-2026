@@ -1,8 +1,7 @@
 import uuid
+from datetime import timedelta, UTC
 
 import asyncpg
-from asyncpg import Connection
-from loguru import logger
 
 from db_2026.seccom.model import *
 
@@ -44,8 +43,8 @@ class UserRepository:
 
     async def create(self, user: User) -> User:
         record = await self.conn.fetchrow(
-            "INSERT INTO users (pub_key, token) VALUES ($1, $2) RETURNING *",
-            user.pub_key, user.token
+            "INSERT INTO users (pub_key, token, challenge, admin) VALUES ($1, $2, $3, $4) RETURNING *",
+            user.pub_key, user.token, user.challenge, user.admin
         )
         return User(**dict(record))
 
@@ -59,13 +58,17 @@ class UserRepository:
 
     async def update(self, user: User) -> User | None:
         record = await self.conn.fetchrow(
-            "UPDATE users SET token = $2 WHERE pub_key = $1 RETURNING *",
-            user.pub_key, user.token
+            "UPDATE users SET token = $2, challenge = $3, admin=$4 WHERE pub_key = $1 RETURNING *",
+            user.pub_key, user.token, user.challenge, user.admin
         )
         return User(**dict(record)) if record else None
 
     async def delete(self, pub_key: str) -> User | None:
         record = await self.conn.fetchrow("DELETE FROM users WHERE pub_key = $1 RETURNING *", pub_key)
+        return User(**dict(record)) if record else None
+
+    async def get_by_token(self, token: str) -> User | None:
+        record = await self.conn.fetchrow("SELECT * FROM users WHERE token = $1", token)
         return User(**dict(record)) if record else None
 
 
@@ -147,6 +150,16 @@ class MessageRepository:
 
     async def get_all(self) -> list[Message]:
         records = await self.conn.fetch("SELECT * FROM messages")
+        return [Message(**dict(r)) for r in records]
+
+
+    async def get_selected(self, group_id: uuid.UUID, recipient_key: str, since: datetime | None = None) -> list[Message]:
+        if since is None:
+            since = datetime.now(UTC) - timedelta(days=3650) # 10 years ago
+        records = await self.conn.fetch(
+            "SELECT * FROM messages WHERE group_id = $1 AND recipient_key = $2 AND created_at > $3",
+            group_id, recipient_key, since
+        )
         return [Message(**dict(r)) for r in records]
 
     async def update(self, message: Message) -> Message | None:
