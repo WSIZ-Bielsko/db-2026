@@ -4,6 +4,10 @@ keys
 
 __pycache__
 
+# own local work
+my_work
+scratch
+
 # IntelliJ project files
 .idea
 *.iml
