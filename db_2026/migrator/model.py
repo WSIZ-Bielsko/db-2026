@@ -14,7 +14,6 @@ class Migration(BaseModel):
     next_id: str
 
 
-
 def save_migration(path: str, filename: str, migration: Migration):
     full_path = os.path.join(path, filename)
     with open(full_path, 'w') as f:
@@ -40,12 +39,13 @@ on the DB -- table "versioning"
 
 """
 
+
 def test_save_load_migration():
-    migration = Migration(name="test", up_script="up", down_script="down", level=1, id="123457", prev_id="12345", next_id="1234567")
+    migration = Migration(name="test", up_script="up", down_script="down", level=1, id="123457", prev_id="12345",
+                          next_id="1234567")
     save_migration("db", "m_002.json", migration)
     loaded_migration = load_migration("db", "m_002.json")
     assert migration.model_dump() == loaded_migration.model_dump()
-
 
 
 def get_migration_list(path: str) -> list[Migration]:
@@ -54,7 +54,50 @@ def get_migration_list(path: str) -> list[Migration]:
         key=lambda m: m.level
     )
 
+
+def get_migration_by_id(path: str, id: str) -> Migration | None:
+    for m in get_migration_list(path):
+        if m.id == id:
+            return m
+    return None
+
+
+def plan_migrations(current_last_migration: str,
+                    target_migration: str | None,
+                    target_level: int | None) -> list[Migration]:
+    if target_migration is not None:
+        m_src = get_migration_by_id("db", current_last_migration)
+        m_tgt = get_migration_by_id("db", target_migration)
+        mm = get_migration_list("db")
+        src_idx = mm.index(m_src)
+        tgt_idx = mm.index(m_tgt)
+
+        if m_tgt.level > m_src.level:
+            return mm[src_idx + 1: tgt_idx + 1]
+        else:
+            return mm[tgt_idx+1: src_idx + 1][::-1]
+    else:
+        raise ValueError("target_migration is None")
+
+
 if __name__ == '__main__':
-    test_save_load_migration()
-    for m in get_migration_list("db"):
+    # test_save_load_migration()
+    mm = get_migration_list("db")
+    print(mm)
+    for m in mm:
         print(m.model_dump())
+    # print('----' * 5)
+    # m2 = get_migration_by_id("db", "123457")
+    #
+    # idx = mm.index(m2)
+    # print(f"idx={idx}")
+    # print(mm[idx])
+
+    print('----' * 5)
+    for m in plan_migrations("123456", "123458", target_level=None):
+        print(m.model_dump())
+
+    print('----' * 5)
+    for m in plan_migrations("123458", "123456", target_level=None):
+        print(m.model_dump())
+

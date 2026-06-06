@@ -1,9 +1,9 @@
 {
-  "name": "test",
+  "name": "test migration 2",
   "up_script": "up",
   "down_script": "down",
-  "level": 1,
+  "level": 2,
   "id": "123457",
-  "prev_id": "12345",
-  "next_id": "1234567"
+  "prev_id": "123456",
+  "next_id": "123458"
 }
