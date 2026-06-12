@@ -7,11 +7,8 @@ from asyncpg import UndefinedTableError
 from dotenv import load_dotenv
 from loguru import logger
 
-from db_2026.migrator.model import Version, Migration, plan_migrations
+from db_2026.migrator.model import Version, Migration, plan_migrations, MigrationError
 
-
-class MigrationError(Exception):
-    pass
 
 class MigratorService:
 
@@ -42,32 +39,45 @@ class MigratorService:
             return Version(version="START", level=0)
         return Version(**(res[0]))
 
-    async def migrate(self, migration: Migration, direction='UP'):
+    async def migrate(self, migration: Migration, direction: str):
         m = migration # alias
         current_version = await self.current_db_version()
         logger.info(f'running migration: {m.name}, id: {m.id}, direction: {direction}')
-        if current_version.version != m.prev_id:
-            raise MigrationError(f"Migration {m.id} is not valid. "
-                                 f"Current version is {current_version.version}, migration requires {m.prev_id}")
 
-        await self.__execute_sql(m.up_script)
-        logger.info(f"Migration {m.id} applied")
-        await self.__execute_sql(f"UPDATE version SET version = '{m.id}', level = {m.level}",)
-        logger.debug(f"Version updated to {m.id}")
-
-
+        if direction == 'UP':
+            if current_version.version != m.prev_id:
+                raise MigrationError(f"Migration {m.id} is not valid. "
+                                     f"Current version is {current_version.version}, migration requires {m.prev_id}")
+            await self.__execute_sql(m.up_script)
+            logger.info(f"Migration {m.id} applied ({direction})")
+            await self.__execute_sql(f"UPDATE version SET version = '{m.id}', level = {m.level}",)
+            logger.debug(f"Version updated to {m.id}")
+        elif direction == 'DOWN':
+            if current_version.version != m.id:
+                raise MigrationError(f"Migration {m.id} is not valid. "
+                                     f"Current version is {current_version.version}, migration requires {m.id}")
+            await self.__execute_sql(m.down_script)
+            logger.info(f"Migration {m.id} applied ({direction})")
+            await self.__execute_sql(f"UPDATE version SET version = '{m.prev_id}', level = {m.level-1}",)
+            logger.debug(f"Version updated to {m.prev_id}")
+        else:
+            raise MigrationError(f"Invalid direction: {direction}")
 
 
 async def main():
     load_dotenv()
     db_url = environ["DB_URL"]
-    service = MigratorService(db_url, migration_dir='db')
+    migration_dir = 'db'
+    service = MigratorService(db_url, migration_dir=migration_dir)
     await service.connect()
     ver = await service.current_db_version()
     logger.info(f"Current database version: {ver}")
 
-    for m in plan_migrations(path='db', last_executed_migration_id='START', target_migration='M3'):
-        await service.migrate(m, direction='DOWN')
+    plan = plan_migrations(path=migration_dir, last_executed_migration_id='START', target_migration='M3')
+
+
+    for m in plan.migrations:
+        await service.migrate(m, direction=plan.direction)
 
     await service.shutdown()
 

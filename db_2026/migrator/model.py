@@ -15,6 +15,11 @@ class Migration(BaseModel):
     next_id: str
 
 
+
+class MigrationError(Exception):
+    pass
+
+
 class Version(BaseModel):
     version: str
     level: int
@@ -51,12 +56,28 @@ def get_migration_by_id(path: str, id: str) -> Migration | None:
             return m
     return None
 
-
-def plan_migrations(path: str, last_executed_migration_id: str,
-                    target_migration: str | None) -> list[Migration]:
+def check_consistency(migrations: list[Migration]):
     """
-    For "UP" migrations (M1,M3): ["M1", "M2", "M3"] will be returned.
-    For "DOWN" migrations: (M3, M1): ["M3", "M2", "M1"] will be returned.
+    Raises MigrationError if migration[n+1].prev_id != migration[n].id or migration[n].next_id != migration[n+1].id
+    :param migrations:
+    :return:
+    """
+    for x in range(len(migrations) - 1):
+        if migrations[x + 1].prev_id != migrations[x].id:
+            raise MigrationError(f"Migrations {migrations[x].id} and {migrations[x + 1].id} are not consistent")
+        if migrations[x].next_id != migrations[x + 1].id:
+            raise MigrationError(f"Migrations {migrations[x].id} and {migrations[x + 1].id} are not consistent")
+
+
+class Plan(BaseModel):
+    migrations: list[Migration]
+    direction: str
+
+
+def plan_migrations(path: str, last_executed_migration_id: str, target_migration: str) -> Plan:
+    """
+    For "UP" migrations (M1,M3): ["M2", "M3"] will be returned.
+    For "DOWN" migrations: (M3, M1): ["M3", "M2"] will be returned.
 
     :param path:
     :param last_executed_migration_id:
@@ -66,39 +87,53 @@ def plan_migrations(path: str, last_executed_migration_id: str,
     """
     m_src = get_migration_by_id(path, last_executed_migration_id)
     m_tgt = get_migration_by_id(path, target_migration)
+    if m_src is None:
+        raise MigrationError(f"Migration {last_executed_migration_id} not found")
+    if m_tgt is None:
+        raise MigrationError(f"Migration {target_migration} not found")
+    if m_src.level == m_tgt.level:
+        raise MigrationError(f"Migration {last_executed_migration_id} and {target_migration} are at the same level")
+
     mm = get_migration_list(path)
+
+    check_consistency(mm)
+
     src_idx = mm.index(m_src)
     tgt_idx = mm.index(m_tgt)
 
     logger.info(f"src_idx={src_idx}, tgt_idx={tgt_idx}")
 
     if m_tgt.level > m_src.level:
-        direction = 'UP'
-        logger.info(f"direction={direction}")
-        return mm[src_idx + 1: tgt_idx + 1]
+        # start isn't included, target included; execute all returned migrations.up_script
+        return Plan(migrations=mm[src_idx + 1: tgt_idx + 1], direction='UP')
     else:
-        direction = 'DOWN'
-        return mm[tgt_idx+1: src_idx + 1][::-1]
+        # target isn't included, start included; execute all returned migrations.down_script
+        return Plan(migrations=mm[tgt_idx+1: src_idx + 1][::-1], direction='DOWN')
+
+
+PATH = "db_2026/migrator/db"
+
+def test_zero():
+    mm = get_migration_list(PATH)
+    for m in mm:
+        print(m.model_dump())
+
+def test_by_id():
+    m = get_migration_by_id(PATH, "M1")
+    assert m is not None
+    print(m.model_dump())
+
+def test_plan():
+
+    print('----' * 5)
+    for m in plan_migrations(PATH, "M1", "M3").migrations:
+        print(m.model_dump())
+
+    print('----' * 5)
+    for m in plan_migrations(PATH, "M3", "M1").migrations:
+        print(m.model_dump())
+
 
 
 if __name__ == '__main__':
-    # test_save_load_migration()
-    mm = get_migration_list("db")
-    print(mm)
-    for m in mm:
-        print(m.model_dump())
-    # print('----' * 5)
-    # m2 = get_migration_by_id("db", "123457")
-    #
-    # idx = mm.index(m2)
-    # print(f"idx={idx}")
-    # print(mm[idx])
-
-    print('----' * 5)
-    for m in plan_migrations("123456", "123458", target_level=None):
-        print(m.model_dump())
-
-    print('----' * 5)
-    for m in plan_migrations("123458", "123456", target_level=None):
-        print(m.model_dump())
-
+    pass
