@@ -1,9 +1,9 @@
 {
   "name": "test migration 1",
-  "up_script": "up1",
-  "down_script": "down1",
+  "up_script": "SELECT 1;",
+  "down_script": "SELECT 0;",
   "level": 1,
-  "id": "123456",
-  "prev_id": "N/A",
-  "next_id": "123457"
+  "id": "M1",
+  "prev_id": "START",
+  "next_id": "M2"
 }

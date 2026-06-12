@@ -1,9 +1,9 @@
 {
   "name": "test migration 2",
-  "up_script": "up",
-  "down_script": "down",
+  "up_script": "create table test_table (id serial primary key, name text);",
+  "down_script": "drop table test_table;",
   "level": 2,
-  "id": "123457",
-  "prev_id": "123456",
-  "next_id": "123458"
+  "id": "M2",
+  "prev_id": "M1",
+  "next_id": "M3"
 }

@@ -1,6 +1,7 @@
 import os
 
 from pydantic import BaseModel
+from loguru import logger
 
 
 class Migration(BaseModel):
@@ -14,38 +15,22 @@ class Migration(BaseModel):
     next_id: str
 
 
+class Version(BaseModel):
+    version: str
+    level: int
+
 def save_migration(path: str, filename: str, migration: Migration):
     full_path = os.path.join(path, filename)
+    logger.info(f"Saving migration {migration.id} to {full_path}")
     with open(full_path, 'w') as f:
         f.write(migration.model_dump_json(indent=2))
+    logger.info(f"Migration {migration.id} saved")
 
 
 def load_migration(path: str, filename: str) -> Migration:
     full_path = os.path.join(path, filename)
     with open(full_path, 'r') as f:
         return Migration.model_validate_json(f.read())
-
-
-"""
-level 1: id=aabbcc
-level 2: id=aabbdc
-level 3: id=ddccag
-
-
-on the DB -- table "versioning"
-- current_level
-- last_migration_id
-- db_name
-
-"""
-
-
-def test_save_load_migration():
-    migration = Migration(name="test", up_script="up", down_script="down", level=1, id="123457", prev_id="12345",
-                          next_id="1234567")
-    save_migration("db", "m_002.json", migration)
-    loaded_migration = load_migration("db", "m_002.json")
-    assert migration.model_dump() == loaded_migration.model_dump()
 
 
 def get_migration_list(path: str) -> list[Migration]:
@@ -62,19 +47,24 @@ def get_migration_by_id(path: str, id: str) -> Migration | None:
     return None
 
 
-def plan_migrations(current_last_migration: str,
+def plan_migrations(path: str, current_last_migration: str,
                     target_migration: str | None,
                     target_level: int | None) -> list[Migration]:
     if target_migration is not None:
-        m_src = get_migration_by_id("db", current_last_migration)
-        m_tgt = get_migration_by_id("db", target_migration)
-        mm = get_migration_list("db")
+        m_src = get_migration_by_id(path, current_last_migration)
+        m_tgt = get_migration_by_id(path, target_migration)
+        mm = get_migration_list(path)
         src_idx = mm.index(m_src)
         tgt_idx = mm.index(m_tgt)
 
+        logger.info(f"src_idx={src_idx}, tgt_idx={tgt_idx}")
+
         if m_tgt.level > m_src.level:
+            direction = 'UP'
+            logger.info(f"direction={direction}")
             return mm[src_idx + 1: tgt_idx + 1]
         else:
+            direction = 'DOWN'
             return mm[tgt_idx+1: src_idx + 1][::-1]
     else:
         raise ValueError("target_migration is None")
