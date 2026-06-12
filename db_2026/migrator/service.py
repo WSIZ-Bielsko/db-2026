@@ -66,7 +66,7 @@ async def main():
     ver = await service.current_db_version()
     logger.info(f"Current database version: {ver}")
 
-    for m in plan_migrations(path='db', current_last_migration='M3', target_migration='M1', target_level=None):
+    for m in plan_migrations(path='db', last_executed_migration_id='START', target_migration='M3'):
         await service.migrate(m, direction='DOWN')
 
     await service.shutdown()

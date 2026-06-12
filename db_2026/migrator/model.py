@@ -34,6 +34,11 @@ def load_migration(path: str, filename: str) -> Migration:
 
 
 def get_migration_list(path: str) -> list[Migration]:
+    """
+    Return a list of migrations sorted by level
+    :param path:
+    :return:
+    """
     return sorted(
         [load_migration(path, f) for f in os.listdir(path) if f.startswith('m') and f.endswith(".json")],
         key=lambda m: m.level
@@ -47,27 +52,33 @@ def get_migration_by_id(path: str, id: str) -> Migration | None:
     return None
 
 
-def plan_migrations(path: str, current_last_migration: str,
-                    target_migration: str | None,
-                    target_level: int | None) -> list[Migration]:
-    if target_migration is not None:
-        m_src = get_migration_by_id(path, current_last_migration)
-        m_tgt = get_migration_by_id(path, target_migration)
-        mm = get_migration_list(path)
-        src_idx = mm.index(m_src)
-        tgt_idx = mm.index(m_tgt)
+def plan_migrations(path: str, last_executed_migration_id: str,
+                    target_migration: str | None) -> list[Migration]:
+    """
+    For "UP" migrations (M1,M3): ["M1", "M2", "M3"] will be returned.
+    For "DOWN" migrations: (M3, M1): ["M3", "M2", "M1"] will be returned.
 
-        logger.info(f"src_idx={src_idx}, tgt_idx={tgt_idx}")
+    :param path:
+    :param last_executed_migration_id:
+    :param target_migration:
+    :param target_level:
+    :return:
+    """
+    m_src = get_migration_by_id(path, last_executed_migration_id)
+    m_tgt = get_migration_by_id(path, target_migration)
+    mm = get_migration_list(path)
+    src_idx = mm.index(m_src)
+    tgt_idx = mm.index(m_tgt)
 
-        if m_tgt.level > m_src.level:
-            direction = 'UP'
-            logger.info(f"direction={direction}")
-            return mm[src_idx + 1: tgt_idx + 1]
-        else:
-            direction = 'DOWN'
-            return mm[tgt_idx+1: src_idx + 1][::-1]
+    logger.info(f"src_idx={src_idx}, tgt_idx={tgt_idx}")
+
+    if m_tgt.level > m_src.level:
+        direction = 'UP'
+        logger.info(f"direction={direction}")
+        return mm[src_idx + 1: tgt_idx + 1]
     else:
-        raise ValueError("target_migration is None")
+        direction = 'DOWN'
+        return mm[tgt_idx+1: src_idx + 1][::-1]
 
 
 if __name__ == '__main__':

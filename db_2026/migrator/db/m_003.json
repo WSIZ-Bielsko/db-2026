@@ -1,7 +1,7 @@
 {
   "name": "test migration 3",
-  "up_script": "insert into test_table (name) values ('test');",
-  "down_script": "delete from test_table where name = 'test';",
+  "up_script": "insert into test_table (name) values ('test 123');",
+  "down_script": "delete from test_table where name = 'test 123';",
   "level": 3,
   "id": "M3",
   "prev_id": "M2",
