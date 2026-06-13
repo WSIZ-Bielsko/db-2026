@@ -1,0 +1,9 @@
+{
+  "name": "add unique (but nullable) alias column to test_table",
+  "up_script": "alter table test_table add column alias text unique;",
+  "down_script": "alter table test_table drop column alias;",
+  "level": 4,
+  "id": "M4",
+  "prev_id": "M3",
+  "next_id": "NONE"
+}

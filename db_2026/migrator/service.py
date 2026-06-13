@@ -98,7 +98,7 @@ class MigratorService:
 async def main():
     load_dotenv()
     db_url = environ["DB_URL"]
-    migration_dir = 'db'
+    migration_dir = environ["MIGRATION_DIR"]
     service = MigratorService(db_url, migration_dir=migration_dir)
     await service.connect()
     ver = await service.current_db_version()
@@ -110,7 +110,7 @@ async def main():
     # for m in plan.migrations:
     #     await service.migrate(m, direction=plan.direction)
 
-    # await service.rollback_last()
+    await service.rollback_last()
     # await service.rollback_last()
     # await service.rollback_last()
 
