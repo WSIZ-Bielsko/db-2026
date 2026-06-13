@@ -7,7 +7,8 @@ from asyncpg import UndefinedTableError
 from dotenv import load_dotenv
 from loguru import logger
 
-from db_2026.migrator.model import Version, Migration, plan_migrations, MigrationError
+from db_2026.migrator.model import Version, Migration, plan_migrations, MigrationError, get_migration_by_id, \
+    get_migration_list
 
 
 class MigratorService:
@@ -25,7 +26,7 @@ class MigratorService:
         await self.pool.close()
         logger.info("Disconnected from database")
 
-    async def __execute_sql(self, sql) -> Any:
+    async def __execute_sql(self, sql: str) -> Any:
         async with self.pool.acquire() as conn:
             return await conn.fetch(sql)
 
@@ -63,6 +64,36 @@ class MigratorService:
         else:
             raise MigrationError(f"Invalid direction: {direction}")
 
+    async def rollback_last(self):
+        current_version = await self.current_db_version()
+        if current_version.version == 'START':
+            logger.warning("Cannot rollback from START version")
+            return
+        last_migration = get_migration_by_id(path=self.migration_dir, id=current_version.version)
+        if not last_migration:
+            raise MigrationError(f"Migration {current_version.version} not found")
+        await self.migrate(last_migration, direction='DOWN')
+        logger.info(f"Rolled back last migration: {current_version.version}")
+
+    async def upgrade_head(self):
+        """
+        Executes all necessary migrations to bring DB to the highest level (as defined by files in self.migration_dir).
+        :return:
+        """
+
+
+        current_version = await self.current_db_version()
+        last_migration = get_migration_list(self.migration_dir)[-1]
+
+        plan = plan_migrations(path=self.migration_dir,
+                               last_executed_migration_id=current_version.version,
+                               target_migration=last_migration.id)
+        logger.info(f'executing all migrations up to head: {last_migration.id} / {last_migration.level} /{last_migration.name}')
+        for m in plan.migrations:
+            await self.migrate(m, direction=plan.direction)
+
+
+
 
 async def main():
     load_dotenv()
@@ -73,11 +104,17 @@ async def main():
     ver = await service.current_db_version()
     logger.info(f"Current database version: {ver}")
 
-    plan = plan_migrations(path=migration_dir, last_executed_migration_id='START', target_migration='M3')
+    # MIGRATE SELECTIVCE
+    # plan = plan_migrations(path=migration_dir, last_executed_migration_id='START', target_migration='M3')
+    #
+    # for m in plan.migrations:
+    #     await service.migrate(m, direction=plan.direction)
 
+    # await service.rollback_last()
+    # await service.rollback_last()
+    # await service.rollback_last()
 
-    for m in plan.migrations:
-        await service.migrate(m, direction=plan.direction)
+    await service.upgrade_head()
 
     await service.shutdown()
 
