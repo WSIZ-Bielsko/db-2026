@@ -1,0 +1,9 @@
+{
+  "name": "create type ramp_booking_operation",
+  "up_script": "CREATE TYPE ramp_booking_operation AS ENUM (\n    'LOADING',\n    'UNLOADING',\n    'SERVICE'\n);",
+  "down_script": "drop type if exists ramp_booking_operation;",
+  "level": 4,
+  "id": "M4",
+  "prev_id": "M3",
+  "next_id": "NONE"
+}

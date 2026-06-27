@@ -1,0 +1,9 @@
+{
+  "name": "create type ramp_booking_status",
+  "up_script": "CREATE TYPE ramp_booking_status AS ENUM (\n    'PLANNED',\n    'DONE',\n    'CANCELLED'\n);",
+  "down_script": "drop type if exists ramp_booking_status;",
+  "level": 3,
+  "id": "M3",
+  "prev_id": "M2",
+  "next_id": "M4"
+}
