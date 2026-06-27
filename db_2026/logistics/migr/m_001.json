@@ -1,0 +1,9 @@
+{
+  "name": "create factories table",
+  "up_script": "CREATE TABLE factories (\n    id UUID PRIMARY KEY,\n    name text not null,\n    address text not null default 'N/A'\n);",
+  "down_script": "drop table factories;",
+  "level": 1,
+  "id": "M1",
+  "prev_id": "START",
+  "next_id": "M2"
+}

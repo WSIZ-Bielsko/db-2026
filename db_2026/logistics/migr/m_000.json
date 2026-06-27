@@ -1,0 +1,9 @@
+{
+  "name": "START",
+  "up_script": "SELECT 1;",
+  "down_script": "SELECT 0;",
+  "level": 0,
+  "id": "START",
+  "prev_id": "NONE",
+  "next_id": "M1"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "create ramps table",
+  "up_script": "CREATE TABLE ramps (\n    id uuid PRIMARY KEY,\n    factory_id uuid NOT NULL REFERENCES factories(id) ON DELETE CASCADE,\n    name text NOT NULL UNIQUE,\n    active boolean NOT NULL DEFAULT true\n);",
+  "down_script": "drop table ramps;",
+  "level": 2,
+  "id": "M2",
+  "prev_id": "M1",
+  "next_id": "NONE"
+}
