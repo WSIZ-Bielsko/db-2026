@@ -1,0 +1,9 @@
+{
+  "name": "create type ramp_booking_operation",
+  "up_script": "CREATE TABLE ramp_bookings (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    ramp_id UUID NOT NULL references ramps(id) ON DELETE CASCADE,\n    start_at TIMESTAMPTZ NOT NULL,\n    stop_at TIMESTAMPTZ NOT NULL,\n    order_id UUID,\n    operation ramp_booking_operation NOT NULL,\n    status ramp_booking_status NOT NULL\n);",
+  "down_script": "DROP TABLE ramp_bookings;",
+  "level": 5,
+  "id": "M5",
+  "prev_id": "M4",
+  "next_id": "NONE"
+}

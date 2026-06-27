@@ -108,7 +108,7 @@ async def main():
     #     await service.migrate(m, direction=plan.direction)
 
     # await service.rollback_last()
-    await service.rollback_last()
+    # await service.rollback_last()
     await service.rollback_last()
 
     await service.upgrade_head()
