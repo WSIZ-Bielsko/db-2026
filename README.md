@@ -1,1 +1,1 @@
-# kurs baz danych semestr letni 2026 
+# kurs baz danych semestr letni 2026 WSIZ BB
